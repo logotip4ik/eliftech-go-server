@@ -32,12 +32,24 @@ func FindOnePost(c *gin.Context) {
 }
 
 func UpdateOnePost(c *gin.Context) {
-  // Get model if exist
+	userId, err := token.ExtractTokenID(c)
+
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
   var post models.Post
   if err := models.DB.Where("id = ?", c.Param("id")).First(&post).Error; err != nil {
     c.JSON(404, gin.H{"error": err})
     return
   }
+
+	if (post.UserID != userId) {
+		c.String(401, "Unauthorized")
+		c.Abort()
+		return
+	}
 
   // Validate input
   var input models.UpdatePostInput
@@ -83,11 +95,24 @@ func CreateOnePost(c *gin.Context) {
 }
 
 func DeleteOneBook(c *gin.Context) {
-	var post models.Post
+	userId, err := token.ExtractTokenID(c)
+
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+  var post models.Post
   if err := models.DB.Where("id = ?", c.Param("id")).First(&post).Error; err != nil {
     c.JSON(404, gin.H{"error": err})
     return
   }
+
+	if (post.UserID != userId) {
+		c.String(401, "Unauthorized")
+		c.Abort()
+		return
+	}
 
   if err := models.DB.Delete(&post).Error; err != nil {
 		c.JSON(500, gin.H{"error": err});
